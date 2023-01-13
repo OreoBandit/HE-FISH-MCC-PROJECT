@@ -4,6 +4,8 @@ import 'package:fish/components/util/customized_textfield.dart';
 import 'package:fish/pages/HomePage.dart';
 import 'package:fish/pages/RegisterPage.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../components/util/google_sign_in_api.dart';
 
 class loginPage extends StatefulWidget {
   const loginPage({Key? key}) : super(key: key);
@@ -13,6 +15,38 @@ class loginPage extends StatefulWidget {
 }
 
 class _loginPageState extends State<loginPage> {
+  Future googleLogin(BuildContext context) async {
+    final user = await GoogleSignInApi.login(context);
+    String errMSG = 'Login Succesful';
+    Color errCol = const Color.fromARGB(255, 130, 234, 134);
+    if (user != null) {
+      // ignore: use_build_context_synchronously
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            return HomePage(
+              user: User(
+                id: 1,
+                email: "bimski.diski@gmail.com",
+                username: username_controller.text,
+                token: "Bram112",
+              ),
+            );
+          },
+        ),
+      );
+    }
+    final msg = SnackBar(
+      content: Text(errMSG),
+      backgroundColor: errCol,
+      duration: const Duration(seconds: 2),
+    );
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(msg);
+    // }
+  }
+
   TextEditingController username_controller = TextEditingController();
   TextEditingController password_controller = TextEditingController();
   @override
@@ -198,10 +232,10 @@ class _loginPageState extends State<loginPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              //GOOGLE LOGIN
                               TextButton(
                                 onPressed: () {
-                                  //API LOGIN WITH GOOGLE
-                                  // MaterialPageRoute(builder:  )
+                                  googleLogin(context);
                                 },
                                 child: const Text(
                                   "OR LOG IN WITH",

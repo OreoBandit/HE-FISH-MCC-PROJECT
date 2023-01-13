@@ -1,4 +1,5 @@
 import 'package:fish/pages/FishesPage.dart';
+import 'package:fish/pages/loginPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -8,6 +9,7 @@ import 'package:fish/components/backgrounds/background_home.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fish/components/util/my_carousel.dart';
 import '../components/util/User.dart';
+import '../components/util/google_sign_in_api.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -40,8 +42,19 @@ class _HomePageState extends State<HomePage> {
                   ),
                   //NAVIGASI KE HOME PAGE
                   onPressed: () {
-                    Navigator.popUntil(
-                        context, (Route<dynamic> route) => route.isFirst);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          try {
+                            GoogleSignInApi.logout();
+                          } catch (e) {}
+                          return const loginPage();
+                        },
+                      ),
+                    );
+                    // Navigator.popUntil(
+                    //     context, (Route<dynamic> route) => route.isFirst);
                   },
                 ),
               ), //EXIT BUTTON TO LOGIN PAGE
