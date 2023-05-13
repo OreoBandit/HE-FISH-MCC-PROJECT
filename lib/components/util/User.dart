@@ -1,25 +1,23 @@
 class User {
   int id;
-  String username = "User";
-  String email = "NULL";
+  String email;
+  String username;
+  String pass;
   String token;
-  User({
-    required this.id,
-    required this.username,
-    required this.email,
-    required this.token,
-  });
+
+  User(
+      {required this.id,
+      required this.email,
+      required this.username,
+      required this.pass,
+      required this.token});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as int,
-      username: json['name'].toString(),
-      email: json['email'].toString(),
-      token: json['token'].toString(),
-    );
-  }
-
-  String getName() {
-    return username;
+        id: json['id'] as int,
+        email: json['email'],
+        username: json['username'],
+        pass: json['pass'],
+        token: json['token']);
   }
 }

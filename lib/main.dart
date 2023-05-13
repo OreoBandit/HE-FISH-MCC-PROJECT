@@ -1,6 +1,7 @@
 import 'package:fish/pages/loginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:cross_file/src/types/interface.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const HE_FISH());

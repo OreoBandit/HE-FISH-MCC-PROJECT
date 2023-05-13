@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import '../components/util/User.dart';
 import '../components/util/customized_textfield.dart';
 import '../components/util/fishes.dart';
+import 'FishesPage.dart';
 import 'HomePage.dart';
 import 'package:flutter/cupertino.dart';
 import './editFish.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class FishDetail extends StatefulWidget {
   final User user;
@@ -23,6 +26,17 @@ class _fishDetailState extends State<FishDetail> {
   String? id; //NGAMBIL DARI ID DB
   String? type; //NGAMBIL DARI ID DB
 
+  Future<bool> deleteFish(int id) async {
+    var url = "http://10.0.2.2:3000/fishes/deleteFish";
+    var response = await http.delete(Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'id': id}));
+    if (response.statusCode != 200) {
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -33,14 +47,30 @@ class _fishDetailState extends State<FishDetail> {
           backgroundColor: const Color.fromARGB(255, 216, 229, 255),
           overlayColor: Colors.black,
           overlayOpacity: 0.6,
-          // visible: widget.user.id == widget.item.author_id,
+          visible: widget.user.id == widget.item.user_id,
           icon: Icons.menu,
           children: [
             //DELETE
             SpeedDialChild(
               child: const Icon(Icons.delete_forever_outlined),
               backgroundColor: Colors.red,
-              onTap: () => print('Delete Tapped'),
+              onTap: () async {
+                String msg = 'Fish Deleted';
+                Color:
+                Colors.red;
+                if (await deleteFish(widget.item.fish_id)) {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return fishesPages(widget.item.type, user: widget.user);
+                      },
+                    ),
+                  );
+                }
+              },
             ),
             SpeedDialChild(
               child: const Icon(Icons.edit),
@@ -100,7 +130,7 @@ class _fishDetailState extends State<FishDetail> {
                 borderRadius: BorderRadius.circular(20), // Image border
                 child: SizedBox.fromSize(
                   // Image radius
-                  child: Image.asset(
+                  child: Image.network(
                     widget.item.image_path,
                     fit: BoxFit.cover,
                     height: size.height * 0.3,
@@ -213,7 +243,7 @@ class _fishDetailState extends State<FishDetail> {
                       ),
                     ),
                     Text(
-                      widget.item.fish_type,
+                      widget.item.type,
                       style: const TextStyle(
                         fontFamily: 'INTER',
                         // fontWeight: FontWeight.bold,

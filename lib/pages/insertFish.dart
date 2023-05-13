@@ -1,11 +1,12 @@
 import 'package:fish/components/backgrounds/background_home.dart';
-
 import 'package:fish/components/util/User.dart';
+import 'package:fish/pages/FishesPage.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'dart:async';
 import '../components/util/SelectPhotoScreen.dart';
 import '../components/util/ImagePicker.dart';
@@ -13,9 +14,12 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../components/util/customized_textfield.dart';
 import '../components/util/SelectPhotoScreen.dart';
+import '../components/util/fishes_type.dart';
+import '../components/util/fishes.dart';
 
 class insertFish extends StatefulWidget {
-  const insertFish({Key? key, required User user}) : super(key: key);
+  final User user;
+  const insertFish({Key? key, required this.user}) : super(key: key);
 
   @override
   State<insertFish> createState() => _insertFishState();
@@ -23,9 +27,11 @@ class insertFish extends StatefulWidget {
 
 // ignore: camel_case_types
 class _insertFishState extends State<insertFish> {
+  final numOnly = RegExp(r'^-?(([0-9]*)|(([0-9]*)\.([0-9]*)))$');
   final fishesType = ["Fresh Water", "Salt Water", "Mixed Water"];
-  String fishTypeVal = "Fresh Water";
+  String? fishTypeVal;
   File? _image;
+  String? _image2;
 
   TextEditingController fish_name_controller = TextEditingController();
   TextEditingController fish_price_controller = TextEditingController();
@@ -35,12 +41,13 @@ class _insertFishState extends State<insertFish> {
     try {
       final image = await ImagePicker().pickImage(source: source);
       if (image == null) return;
-      File? img = File(image.path);
+      // File? img = File(image.path);
       setState(() {
-        _image = img;
+        _image = File(image.path);
+        _image2 = _image!.path;
         Navigator.of(context).pop();
       });
-    } on PlatformException catch (err) {
+    } on PlatformException {
       const msg = SnackBar(
         content: Text("No Access"),
         backgroundColor: Colors.red,
@@ -50,6 +57,39 @@ class _insertFishState extends State<insertFish> {
     }
   }
 
+  //NEW ADDITION
+  Future<bool> addfish() async {
+    final String url = "http://10.0.2.2:3000/fishes/insertFish";
+    var request = http.MultipartRequest("POST", Uri.parse(url));
+    int fishTypeID = 1;
+
+    if (fishTypeVal == 'Fresh Water') {
+      fishTypeID = 1;
+    } else if (fishTypeVal == 'Salty Water') {
+      fishTypeID = 2;
+    } else if (fishTypeVal == 'Mixed Water') {
+      fishTypeID = 3;
+    }
+
+    request.fields['user_id'] = widget.user.id.toString();
+    request.fields['fish_type_id'] = fishTypeID.toString();
+    request.fields['fish_name'] = fish_name_controller.text;
+    request.fields['fish_desc'] = fish_desc_controller.text;
+    request.fields['fish_price'] = fish_price_controller.text;
+    request.fields['fish_image_path'] = _image2.toString();
+
+    // request.files
+    //     .add(await http.MultipartFile.fromPath('_image', _image2.toString()));
+
+    // print("Fish:" + _image2.toString());
+    final respond = await request.send();
+    if (respond.statusCode != 200) {
+      return false;
+    }
+    return true;
+  }
+
+  //NEW ADDITION
   void _showSelectPhotoOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -190,7 +230,7 @@ class _insertFishState extends State<insertFish> {
                 CustomizedTextField(
                   controller: fish_price_controller,
                   hintText: "Fish Price",
-                  keyboardType: TextInputType.visiblePassword,
+                  keyboardType: TextInputType.number,
                   suffixIcon: Icons.attach_money_outlined,
                 ),
 
@@ -267,7 +307,7 @@ class _insertFishState extends State<insertFish> {
                 CustomizedTextField(
                   controller: fish_desc_controller,
                   hintText: "Fish Desc",
-                  keyboardType: TextInputType.visiblePassword,
+                  keyboardType: TextInputType.name,
                   suffixIcon: Icons.abc,
                 ),
 
@@ -278,8 +318,8 @@ class _insertFishState extends State<insertFish> {
                     width: 200,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        String errMSG = 'Fish Succesfully Edited';
+                      onPressed: () async {
+                        String errMSG = 'Fish Succesfully Inserted';
                         Color errCol;
                         if (fish_name_controller.text.isEmpty ||
                             fish_price_controller.text.isEmpty ||
@@ -287,16 +327,25 @@ class _insertFishState extends State<insertFish> {
                             _image == null) {
                           errMSG = "Please fill all of the forms";
                           errCol = Colors.red;
+                        } else if (!(numOnly
+                            .hasMatch(fish_price_controller.text))) {
+                          errMSG = "Price can only contain numbers";
+                          errCol = Colors.red;
                         } else {
-                          //API LOGIN
-                          if (1 < 4) {
+                          if (await addfish()) {
                             Navigator.pop(context);
-                            errCol = const Color.fromARGB(255, 130, 234, 134);
-                          } else {
-                            //ERROR MESSAGE
-                            errMSG = "Something went wrong";
-                            errCol = Colors.red;
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return fishesPages(fishTypeVal!,
+                                      user: widget.user);
+                                },
+                              ),
+                            );
                           }
+                          errCol = const Color.fromARGB(255, 130, 234, 134);
                         }
                         final msg = SnackBar(
                           content: Text(errMSG),

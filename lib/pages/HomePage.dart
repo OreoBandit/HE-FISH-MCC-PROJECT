@@ -77,8 +77,6 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               children: [
                 const SizedBox(height: 25),
-                // Image.asset("assets/images/he-fish-logo.png",
-                //     width: size.width * 0.7),
                 const Center(
                   child: Text(
                     'We Provide The Best Fishes For You.',

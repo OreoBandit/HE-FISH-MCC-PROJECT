@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:fish/components/backgrounds/background.dart';
 import 'package:fish/components/util/User.dart';
 import 'package:fish/components/util/customized_textfield.dart';
 import 'package:fish/pages/HomePage.dart';
 import 'package:fish/pages/RegisterPage.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import '../components/util/google_sign_in_api.dart';
 
@@ -15,6 +18,28 @@ class loginPage extends StatefulWidget {
 }
 
 class _loginPageState extends State<loginPage> {
+  TextEditingController username_controller = TextEditingController();
+  TextEditingController password_controller = TextEditingController();
+
+  Future<User> loginUser(String username, String pass) async {
+    var url = 'http://10.0.2.2:3000/users/login'; //mobile device
+    var response = await http.post(Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'username': username, 'pass': pass}));
+    var result = jsonDecode(response.body);
+    if (result.length > 0) {
+      return User.fromJson(result[0]);
+    } else {
+      return User(
+        id: -1,
+        email: 'none',
+        username: 'none',
+        pass: 'none',
+        token: 'none',
+      );
+    }
+  }
+
   Future googleLogin(BuildContext context) async {
     final user = await GoogleSignInApi.login(context);
     String errMSG = 'Login Succesful';
@@ -31,6 +56,7 @@ class _loginPageState extends State<loginPage> {
                 email: "bimski.diski@gmail.com",
                 username: username_controller.text,
                 token: "Bram112",
+                pass: 'divine intervention',
               ),
             );
           },
@@ -47,8 +73,6 @@ class _loginPageState extends State<loginPage> {
     // }
   }
 
-  TextEditingController username_controller = TextEditingController();
-  TextEditingController password_controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -149,53 +173,41 @@ class _loginPageState extends State<loginPage> {
                             child: ElevatedButton(
                               //NAVIGASI KE HOME PAGE
 
-                              onPressed: () {
-                                //DELETE LATER AFTER DEBUG
-                                // Navigator.push(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //     builder: (context) {
-                                //       return HomePage(
-                                //         user: User(
-                                //           id: 501, //ID ADMIN STARTS WITH 5
-                                //           email: "bimski.diski@binus.ac.us",
-                                //           username: "Lord Bram IV",
-                                //           token: "Bram112",
-                                //         ),
-                                //       );
-                                //     },
-                                //   ),
-                                // );
+                              onPressed: () async {
+                                RegExp pformat = RegExp(
+                                    r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[-_!@#\$&*~]).{8,}$');
                                 String errMSG = 'Login Succesful';
                                 Color errCol;
                                 if (username_controller.text.isEmpty ||
                                     password_controller.text.isEmpty) {
                                   errMSG = "Please fill all of the forms";
                                   errCol = Colors.red;
+                                } else if (!pformat
+                                    .hasMatch(password_controller.text)) {
+                                  errMSG =
+                                      "Password must contains at least 1 upper, lower, and number character!";
+                                  errCol = Colors.red;
                                 } else {
+                                  User validate = await loginUser(
+                                      username_controller.text,
+                                      password_controller.text);
                                   //API LOGIN
-                                  if (1 < 4) {
+                                  if (validate.id >= 0) {
+                                    // ignore: use_build_context_synchronously
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) {
                                           return HomePage(
-                                            user: User(
-                                              id: 1,
-                                              email: "bimski.diski@binus.ac.us",
-                                              username:
-                                                  username_controller.text,
-                                              token: "Bram112",
-                                            ),
+                                            user: validate,
                                           );
                                         },
                                       ),
                                     );
-                                    errCol = const Color.fromARGB(
-                                        255, 130, 234, 134);
-                                  } //API LOGIN
-                                  else {
+                                    errCol = Colors.green;
+                                  } else {
                                     //ERROR MESSAGE
+                                    errMSG = "Something went wrong!";
                                     errCol = Colors.red;
                                   }
                                 }

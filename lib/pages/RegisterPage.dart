@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:email_validator/email_validator.dart';
-
+import 'dart:convert';
 import '../components/backgrounds/background.dart';
 import '../components/util/customized_textfield.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -19,6 +20,49 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController email_controller = TextEditingController();
   TextEditingController password_controller = TextEditingController();
   TextEditingController password_controller_confirm = TextEditingController();
+
+  Future<bool> usrDupli(String username) async {
+    var url = 'http://192.168.139.1:3000/users/RegisterCheckUsername';
+    var response = await http.post(Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'username': username}));
+    if (response.statusCode == 200) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> emailDupli(String email) async {
+    var url = 'http://192.168.139.1:3000/users/RegisterCheckEmail';
+    var response = await http.post(Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'email': email}));
+    if (response.statusCode == 200) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> registerUser(
+      String email, String username, String password) async {
+    var url = 'http://10.0.2.2:3000/users/registerUser';
+    var response = await http.post(
+      Uri.parse(url),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(
+        {
+          'email': email,
+          'username': username,
+          'pass': password,
+          'token': 12345,
+        },
+      ),
+    );
+    if (response.statusCode == 200) {
+      return true;
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +199,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     height: 50,
                     child: ElevatedButton(
                       //NAVIGASI KE HOME PAGE
-                      onPressed: () {
+                      onPressed: () async {
                         RegExp pformat = RegExp(
                             r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[-_!@#\$&*~]).{8,}$');
                         String errMSG = "Successfuly registered!";
@@ -186,45 +230,24 @@ class _RegisterPageState extends State<RegisterPage> {
                           errMSG = "password did not match";
                           errCol = Colors.red;
                         } else {
-                          if (1 > 4) {
+                          if (await usrDupli(username_controller.text)) {
                             //USERNAME ALREADY EXIST
-                            errMSG = "Username already registered";
+                            errMSG = "Username Already Exist";
                             errCol = Colors.red;
-                          } else if (1 > 4) {
+                          } else if (await emailDupli(email_controller.text)) {
                             //EMAIL ALREADY EXIST
                             errMSG = "Email already registered";
                             errCol = Colors.red;
-                          } else if (1 > 4) {
-                            //USERNAME ALREADY EXIST
-                            errMSG = "Username already taken";
-                            errCol = Colors.red;
                           } else {
-                            Navigator.of(context).pop(context);
+                            if (await registerUser(
+                                email_controller.text,
+                                username_controller.text,
+                                password_controller.text)) {
+                              Navigator.of(context).pop(context);
+                              errCol = const Color.fromARGB(255, 130, 234, 134);
+                            }
                             errCol = const Color.fromARGB(255, 130, 234, 134);
                           }
-                          //API LOGIN
-                          // if (1<2) {
-                          //   Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //       builder: (context) {
-                          //         return const RegisterPage(
-                          //             // user: User(
-                          //             //   id: 1,
-                          //             //   email: "Bimski.Diski@gmail.com",
-                          //             //   username: "Brudda bimski",
-                          //             //   token: "Bimski0123",
-                          //             // ),
-                          //             );
-                          //       },
-                          //     ),
-                          //   );
-                          //   errCol = const Color.fromARGB(255, 130, 234, 134);
-                          // } //API LOGIN
-                          // else {
-                          //   //ERROR MESSAGE
-                          //   errCol = Colors.red;
-                          // }
                         }
                         final msg = SnackBar(
                           content: Text(errMSG),
